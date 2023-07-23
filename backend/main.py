@@ -3,10 +3,12 @@
 from flask import Flask, jsonify, request
 from recommendations import collaborative_filtering_reccomendation, content_based_recommendation
 import psycopg2
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, origins="*")
 connection = psycopg2.connect(
-    host="localhost",
+    host="postgres",
     database="movie_recommendations",
     user="postgres",
     password="haslo123",
@@ -16,19 +18,20 @@ connection = psycopg2.connect(
 def get_movie_data():
     cursor = connection.cursor()
 
-    cursor.execute('SELECT links.movieId, title, year, imdbId, ARRAY_AGG(ratings.userId) as users '
+    cursor.execute('SELECT links.movieId, title, year, imdbId, genres, ARRAY_AGG(ratings.userId) as users '
                    'FROM links '
                    'LEFT JOIN movies ON links.movieId = movies.movieId '
                    'LEFT JOIN ratings ON links.movieId = ratings.movieId '
-                    'GROUP BY links.movieId, title, year, imdbId')  
+                    'GROUP BY links.movieId, title, year, imdbId, genres')  
     movies = []
     for row in cursor.fetchall():
         movie_info = {
             'movieId': row[0],
             'title': row[1],
             'year': row[2],
-            'imdbId': row[3],  # Adding imdbId to the dictionary
-            'users': [int(user_id) for user_id in row[4] if user_id]
+            'imdbId': row[3],
+            'genres': row[4],
+            'users': [int(user_id) for user_id in row[5] if user_id]
         }
         movies.append(movie_info)
 
@@ -54,10 +57,23 @@ def get_recommendations():
         top_recommendations = int(request_data.get('top_recommendations', 10))
 
         recommendations = collaborative_filtering_reccomendation(user_id, n_neighbors, top_recommendations)
-        recommended_movies = [{
-            'movie_title': movie_id,
-            'predicted_rating': rating
-        } for movie_id, rating in recommendations.items()]
+
+        # Fetch movie details from the movies list based on movieid in recommendations
+        movies = get_movie_data()
+        recommended_movies = []
+        for movie_id, rating in recommendations.items():
+            for movie in movies:
+                print('movie', movie)
+                if movie['movieId'] == movie_id:
+                    recommended_movie = {
+                        'movieid': movie['movieId'],
+                        'title': movie['title'],
+                        'year': movie['year'],
+                        'genres': movie['genres'],
+                        'predicted_rating': rating,
+                    }
+                    recommended_movies.append(recommended_movie)
+                    break  # Break the loop after finding the movie
 
         return jsonify(recommended_movies)
     except psycopg2.Error as e:
@@ -94,8 +110,11 @@ def get_all_user_ids():
         # Close the cursor and connection
         cursor.close()
 
-        # Return the user ids as a JSON response
-        return jsonify(user_ids)
+        # Create a list of user objects with the specified format
+        users = [{'id': user_id} for user_id in user_ids]
+
+        # Return the user objects as a JSON response
+        return jsonify(users)
 
     except psycopg2.Error as e:
         return jsonify({'error': str(e)})

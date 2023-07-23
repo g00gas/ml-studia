@@ -6,7 +6,6 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import Home from '../components/Home/Home'
 import CollaborativeFilter from '../components/CollaborativeFilter/CollaborativeFilter'
 import ContentFilter from '../components/ContentFilter/ContentFilter'
 import AboutPage from '../components/AboutPage/AboutPage'
@@ -17,7 +16,7 @@ const theme = createTheme(themeOptions);
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home/>,
+    element: <AboutPage/>,
   },
   {
     path:"/collaborativefilter",

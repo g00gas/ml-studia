@@ -1,114 +1,126 @@
 import { useEffect, useState } from "react";
-import axios from 'axios'
-import { Box, Stack } from "@mui/system";
+import axios from "axios";
+import { Box, Grid, Stack } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText, TextField, Typography } from "@mui/material";
-import Fuse from 'fuse.js'
+import Fuse from "fuse.js";
+import { useTheme } from "@mui/material/styles";
 
-interface IMovieResponse{
-    
-        imdbId: number,
-        movieId: number,
-        title: string,
-        users: [number],
-        year: number
-    
+interface IMovieResponse {
+  imdbId: number;
+  movieId: number;
+  title: string;
+  users: [number];
+  year: number;
 }
 
-interface IRecommendationRespone{
-    
-        genres: string,
-        movieid: number,
-        title: string,
-        year: number
-    
+interface IRecommendationRespone {
+  genres: string;
+  movieid: number;
+  title: string;
+  year: number;
 }
 
 const ContentFilter = () => {
-    const [movies, setMovies] = useState<IMovieResponse[]>([]);
-    const [searchResults , setSearchResults] = useState<IMovieResponse[]>([]);
-    const [reccomendationsToShow, setReccomendationsToShow] = useState<IRecommendationRespone[]>([])
-    useEffect(() => {
-      // Function to fetch movies data from the API
-      const fetchMovies = async () => {
-        try {
-          const response = await axios.get('http://localhost:5000/api/movies');
-          setMovies(response.data); // Assuming the response contains the movie data as an array
-        } catch (error) {
-          console.error('Error fetching movies:', error);
-        }
-      };
-  
-      fetchMovies();
-    }, []);
-    const fuseOptions = {
-        keys: [
-            "title",
-        ]
+  const theme = useTheme();
+
+  const [movies, setMovies] = useState<IMovieResponse[]>([]);
+  const [searchResults, setSearchResults] = useState<IMovieResponse[]>([]);
+  const [recommendationsToShow, setRecommendationsToShow] = useState<IRecommendationRespone[]>([]);
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        const response = await axios.get("http://backend:5000/api/movies");
+        setMovies(response.data);
+      } catch (error) {
+        console.error("Error fetching movies:", error);
+      }
     };
 
-    const fuse = new Fuse(movies, fuseOptions)
-    
-    const showReccomendations = async (movie: string) => {
-        const requestBody = {
-            movie_title: movie,
-            top_recommendations: 10,
-        };
-        try {
-            const response = await axios.post('http://localhost:5000/api/cbr', requestBody);
-            console.log('Post request successful. Response:', response.data);
-            const data: IRecommendationRespone[] = response.data
-            setReccomendationsToShow(data)
-          } catch (error) {
-            console.error('Error posting data:', error);
-          }
-        
-    }
+    fetchMovies();
+  }, []);
 
-    return (
-        <Stack sx={{backgroundColor:"gray", height:"100vh", width:"100vw"}}
-        direction="row"
-        justifyContent="space-around"
-        alignItems="center"
-        spacing={1}
-        >
-            <Stack
-            sx={{marginTop:"10em"}}
-            direction="row"
-            justifyContent="center"
-            alignItems="center"
-            spacing={2}
-            >
-                <Stack>
-                <TextField id="outlined-basic" label="Outlined" variant="outlined" onChange={(e)=>{
-                    setSearchResults(fuse.search(e.target.value).map(({item})=>item))
-                    console.log(fuse.search(e.target.value))
-                }} />
-                <Box>
-                    <List>
-                        {searchResults.slice(0, 10).map((item)=>{
-                        return (
-                        <ListItem disablePadding>
-                            <ListItemButton onClick={()=>{showReccomendations(item.title)}}>
-                                <ListItemText primary={item.title} />
-                            </ListItemButton>
-                        </ListItem>
-                        )
-                        })}
-                    </List>
-                </Box>
-                </Stack>
-                <Stack>
-                    <Typography>Twoje 10 rekomendacji to:</Typography>
-                    {reccomendationsToShow.map((item)=>{
-                        return (
-                            <div>{item.title}</div>
-                        )
-                    })}
-                </Stack>   
-            </Stack>
-        <Stack/>
+  const fuseOptions = {
+    keys: ["title"],
+  };
+
+  const fuse = new Fuse(movies, fuseOptions);
+
+  const showRecommendations = async (movie: string) => {
+    const requestBody = {
+      movie_title: movie,
+      top_recommendations: 10,
+    };
+    try {
+      const response = await axios.post("http://backend:5000/api/cbr", requestBody);
+      console.log("Post request successful. Response:", response.data);
+      const data: IRecommendationRespone[] = response.data;
+      setRecommendationsToShow(data);
+    } catch (error) {
+      console.error("Error posting data:", error);
+    }
+  };
+
+  return (
+    <Stack
+      sx={{
+        backgroundColor: theme.palette.background.default,
+        minHeight: "100vh",
+        width: "100vw",
+      }}
+      direction="row"
+      justifyContent="center"
+      alignItems="center"
+      spacing={4}
+    >
+      <Stack spacing={2} maxWidth={400}>
+        <Typography variant="h4" sx={{ textAlign: "center", color: theme.palette.primary.main }}>
+          Movie Recommendations
+        </Typography>
+        <TextField
+          id="outlined-basic"
+          label="Search Movies"
+          variant="outlined"
+          onChange={(e) => {
+            setSearchResults(fuse.search(e.target.value).map(({ item }) => item));
+          }}
+        />
+        <List>
+          {searchResults.slice(0, 10).map((item) => (
+            <ListItem key={item.imdbId} disablePadding>
+              <ListItemButton onClick={() => showRecommendations(item.title)}>
+                <ListItemText primary={item.title} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Stack>
+      <Stack spacing={2} maxWidth={600}>
+        <Typography variant="h5" sx={{ color: theme.palette.secondary.main }}>
+          Your Top 10 Recommendations:
+        </Typography>
+        <Grid container spacing={2}>
+          {recommendationsToShow.map((item) => (
+            <Grid item xs={12} sm={6} md={4} key={item.movieid}>
+              <Box
+                sx={{
+                  border: "1px solid",
+                  borderColor: theme.palette.text.secondary,
+                  borderRadius: theme.shape.borderRadius,
+                  padding: 2,
+                  backgroundColor: theme.palette.background.paper,
+                }}
+              >
+                <Typography variant="subtitle1">{item.title}</Typography>
+                <Typography variant="body2">Genre: {item.genres.split('|').map((genreItem)=>{return `${genreItem}, `})}</Typography>
+                <Typography variant="body2">Year: {item.year}</Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Stack>
     </Stack>
-    );
+  );
 };
 
 export default ContentFilter;

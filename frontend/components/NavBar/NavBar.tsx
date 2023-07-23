@@ -5,11 +5,11 @@ const Navbar = () => {
     <AppBar position="static" color="primary">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          My Website
+          Projekt Machine Learning
         </Typography>
-        <Button color="inherit" href='/about' >About</Button>
-        <Button color="inherit" href='/contentfilter' >Content-Based Filter</Button>
-        <Button color="inherit" href='/collaborativefilter' >Collaborative Filter</Button>
+        <Button color="inherit" href='/about' >O nas</Button>
+        <Button color="inherit" href='/contentfilter' >Filtr na zawartości</Button>
+        <Button color="inherit" href='/collaborativefilter' >Filtr Kolaboratywny</Button>
       </Toolbar>
     </AppBar>
   );
