@@ -30,7 +30,7 @@ const ContentFilter = () => {
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const response = await axios.get("http://backend:5000/api/movies");
+        const response = await axios.get("http://localhost:5000/api/movies");
         setMovies(response.data);
       } catch (error) {
         console.error("Error fetching movies:", error);
@@ -52,7 +52,7 @@ const ContentFilter = () => {
       top_recommendations: 10,
     };
     try {
-      const response = await axios.post("http://backend:5000/api/cbr", requestBody);
+      const response = await axios.post("http://localhost:5000/api/cbr", requestBody);
       console.log("Post request successful. Response:", response.data);
       const data: IRecommendationRespone[] = response.data;
       setRecommendationsToShow(data);
@@ -75,11 +75,11 @@ const ContentFilter = () => {
     >
       <Stack spacing={2} maxWidth={400}>
         <Typography variant="h4" sx={{ textAlign: "center", color: theme.palette.primary.main }}>
-          Movie Recommendations
+          Wyszukaj Film
         </Typography>
         <TextField
           id="outlined-basic"
-          label="Search Movies"
+          label="Wpisz tytuł"
           variant="outlined"
           onChange={(e) => {
             setSearchResults(fuse.search(e.target.value).map(({ item }) => item));
@@ -97,7 +97,7 @@ const ContentFilter = () => {
       </Stack>
       <Stack spacing={2} maxWidth={600}>
         <Typography variant="h5" sx={{ color: theme.palette.secondary.main }}>
-          Your Top 10 Recommendations:
+          Top 10 rekoendacji:
         </Typography>
         <Grid container spacing={2}>
           {recommendationsToShow.map((item) => (
@@ -112,8 +112,8 @@ const ContentFilter = () => {
                 }}
               >
                 <Typography variant="subtitle1">{item.title}</Typography>
-                <Typography variant="body2">Genre: {item.genres.split('|').map((genreItem)=>{return `${genreItem}, `})}</Typography>
-                <Typography variant="body2">Year: {item.year}</Typography>
+                <Typography variant="body2">Rodzaj: {item.genres.split('|').map((genreItem)=>{return `${genreItem}, `})}</Typography>
+                <Typography variant="body2">Rok produkcji: {item.year}</Typography>
               </Box>
             </Grid>
           ))}

@@ -3,7 +3,7 @@ import psycopg2
 from flask_cors import CORS
 from recommendations import collaborative_filtering_reccomendation, content_based_recommendation
 app = Flask(__name__)
-CORS(app, origins="*")
+CORS(app)
 
 connection = psycopg2.connect(
     host="postgres",
@@ -41,7 +41,7 @@ def get_movie_data():
 def get_movies():
     try:
         movies = get_movie_data()
-        return jsonify(movies)
+        return jsonify(movies), 200, {'Access-Control-Allow-Origin': '*'}
     except psycopg2.Error as e:
         return jsonify({'error': str(e)})
 
