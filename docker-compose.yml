@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: haslo123
+      POSTGRES_DB: movie_recommendations
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/movie_data.sql:/docker-entrypoint-initdb.d/movie_data.sql
+
+  backend:
+    build:
+      context: ./backend
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    environment:
+      PGHOST: postgres  # Set the database host to the service name
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      REACT_APP_API_URL: http://backend:5000  # Set the backend API URL
+
+volumes:
+  pgdata:
