@@ -11,14 +11,16 @@ connection = psycopg2.connect(
         host="localhost",
         database="movie_recommendations",
         user="postgres",
-        password="mysecretpassword"
-)
-
-get_ratings_query = pd.read_sql_query ('''
+        password="haslo123", 
+        port=5432
+    )
+get_ratings_query = pd.read_sql_query (
+    '''
                                SELECT
                                *
                                FROM ratings
-                               ''', connection)
+                               ''', 
+    connection)
 get_movies_query = pd.read_sql_query ('''
                                SELECT
                                *
@@ -32,9 +34,9 @@ get_links_query = pd.read_sql_query ('''
 
 def collaborative_filtering_reccomendation(user_id_to_find_recommendations_for, n_neighbors=10, top_recommendations=10):
     # Assuming you have already loaded the 'ratings.csv' and 'movies.csv'
-    ratings_data = pd.DataFrame(get_ratings_query, columns = ['userId', 'movieId', 'rating'])
+    ratings_data = get_ratings_query
     # Step 1: Prepare the data and create user-item matrix
-    user_item_matrix = ratings_data.pivot(index='userId', columns='movieId', values='rating').fillna(0)
+    user_item_matrix = ratings_data.pivot(index='userid', columns='movieid', values='rating').fillna(0)
 
     # Step 2: Choose a collaborative filtering algorithm (k-Nearest Neighbors)
     knn_model = NearestNeighbors(n_neighbors=n_neighbors, metric='cosine', algorithm='brute')
@@ -60,13 +62,7 @@ def collaborative_filtering_reccomendation(user_id_to_find_recommendations_for, 
 
 def content_based_recommendation(movie_title_to_find_recommendations_for, top_recommendations=10):
     # Załóżmy, że dane 'movies.csv' zostały już załadowane
-    movies_data = pd.DataFrame(get_movies_query, columns = ['movieId', 'title', 'genres', 'year'])
-
-    # Rozbij kolumnę "title" na osobne kolumny "title" i "year"
-    movies_data[['title', 'year']] = movies_data['title'].str.extract(r'^(.*?)\s\((\d{4})\)$')
-
-    # Wypełnij brakujące wartości w kolumnie "title" pustymi łańcuchami
-    movies_data['title'] = movies_data['title'].fillna('')
+    movies_data = get_movies_query
 
     # Krok 1: Przygotuj dane i stwórz macierz TF-IDF dla tytułów i gatunków filmów
     tfidf_vectorizer = TfidfVectorizer(stop_words='english', use_idf=True)
@@ -91,8 +87,5 @@ def content_based_recommendation(movie_title_to_find_recommendations_for, top_re
 
     # Wyświetl rekomendacje filmów na podstawie treści (tytułów i gatunków)
     recommended_movies = movies_data.iloc[combined_indices][:top_recommendations]
-
+    print(recommended_movies)
     return recommended_movies
-
-
-print(collaborative_filtering_user_based(100))
