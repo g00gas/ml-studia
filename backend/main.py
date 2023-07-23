@@ -1,12 +1,10 @@
-# app.py
-
 from flask import Flask, jsonify, request
-from recommendations import collaborative_filtering_reccomendation, content_based_recommendation
 import psycopg2
 from flask_cors import CORS
-
+from recommendations import collaborative_filtering_reccomendation, content_based_recommendation
 app = Flask(__name__)
 CORS(app, origins="*")
+
 connection = psycopg2.connect(
     host="postgres",
     database="movie_recommendations",
@@ -102,18 +100,11 @@ def get_content_recommendations():
 @app.route('/api/users', methods=['GET'])
 def get_all_user_ids():
     try:
-        # Fetch all userIds from the ratings table
         cursor = connection.cursor()
         cursor.execute('SELECT DISTINCT userId FROM ratings')
         user_ids = [user_id[0] for user_id in cursor.fetchall()]
-
-        # Close the cursor and connection
         cursor.close()
-
-        # Create a list of user objects with the specified format
         users = [{'id': user_id} for user_id in user_ids]
-
-        # Return the user objects as a JSON response
         return jsonify(users)
 
     except psycopg2.Error as e:

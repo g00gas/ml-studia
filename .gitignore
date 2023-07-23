@@ -1,2 +1,3 @@
 *.zip
 /ml-latest-small
+.idea
