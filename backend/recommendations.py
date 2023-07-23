@@ -87,5 +87,4 @@ def content_based_recommendation(movie_title_to_find_recommendations_for, top_re
 
     # Wyświetl rekomendacje filmów na podstawie treści (tytułów i gatunków)
     recommended_movies = movies_data.iloc[combined_indices][:top_recommendations]
-    print(recommended_movies)
     return recommended_movies

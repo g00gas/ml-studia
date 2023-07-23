@@ -5,15 +5,15 @@ from recommendations import collaborative_filtering_reccomendation, content_base
 import psycopg2
 
 app = Flask(__name__)
+connection = psycopg2.connect(
+    host="localhost",
+    database="movie_recommendations",
+    user="postgres",
+    password="haslo123",
+    port=5432
+)
 
 def get_movie_data():
-    connection = psycopg2.connect(
-        host="localhost",
-        database="movie_recommendations",
-        user="postgres",
-        password="haslo123",
-        port=5432
-    )
     cursor = connection.cursor()
 
     cursor.execute('SELECT links.movieId, title, year, imdbId, ARRAY_AGG(ratings.userId) as users '
@@ -33,50 +33,72 @@ def get_movie_data():
         movies.append(movie_info)
 
     cursor.close()
-    connection.close()
     
     return movies
 
 @app.route('/api/movies', methods=['GET'])
 def get_movies():
-    movies = get_movie_data()
-    return jsonify(movies)
-
+    try:
+        movies = get_movie_data()
+        return jsonify(movies)
+    except psycopg2.Error as e:
+        return jsonify({'error': str(e)})
 
 @app.route('/api/cfr', methods=['POST'])
 def get_recommendations():
-    request_data = request.get_json()
+    try:
+        request_data = request.get_json()
 
-    user_id = int(request_data.get('user_id'))
-    n_neighbors = int(request_data.get('n_neighbors', 10))
-    top_recommendations = int(request_data.get('top_recommendations', 10))
+        user_id = int(request_data.get('user_id'))
+        n_neighbors = int(request_data.get('n_neighbors', 10))
+        top_recommendations = int(request_data.get('top_recommendations', 10))
 
-    recommendations = collaborative_filtering_reccomendation(user_id, n_neighbors, top_recommendations)
-    recommended_movies = [{
-        'movie_title': movie_id,
-        'predicted_rating': rating
-    } for movie_id, rating in recommendations.items()]
+        recommendations = collaborative_filtering_reccomendation(user_id, n_neighbors, top_recommendations)
+        recommended_movies = [{
+            'movie_title': movie_id,
+            'predicted_rating': rating
+        } for movie_id, rating in recommendations.items()]
 
-    return jsonify(recommended_movies)
-
+        return jsonify(recommended_movies)
+    except psycopg2.Error as e:
+        return jsonify({'error': str(e)})
 
 @app.route('/api/cbr', methods=['POST'])
 def get_content_recommendations():
-    request_data = request.get_json()
+    try:    
+        request_data = request.get_json()
 
-    movie_title = request_data.get('movie_title')
-    top_recommendations = int(request_data.get('top_recommendations', 10))
+        movie_title = request_data.get('movie_title')
+        top_recommendations = int(request_data.get('top_recommendations', 10))
 
-    recommendations = content_based_recommendation(movie_title, top_recommendations)
-    recommended_movies = [{
-        'movieid': row['movieid'],
-        'title': row['title'],
-        'year': row['year'],
-        'genres': row['genres']
-    } for _, row in recommendations.iterrows()]
+        recommendations = content_based_recommendation(movie_title, top_recommendations)
+        recommended_movies = [{
+            'movieid': row['movieid'],
+            'title': row['title'],
+            'year': row['year'],
+            'genres': row['genres']
+        } for _, row in recommendations.iterrows()]
 
-    return jsonify(recommended_movies)
+        return jsonify(recommended_movies)
+    except psycopg2.Error as e:
+        return jsonify({'error': str(e)})
+    
+@app.route('/api/users', methods=['GET'])
+def get_all_user_ids():
+    try:
+        # Fetch all userIds from the ratings table
+        cursor = connection.cursor()
+        cursor.execute('SELECT DISTINCT userId FROM ratings')
+        user_ids = [user_id[0] for user_id in cursor.fetchall()]
 
+        # Close the cursor and connection
+        cursor.close()
+
+        # Return the user ids as a JSON response
+        return jsonify(user_ids)
+
+    except psycopg2.Error as e:
+        return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
